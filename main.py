@@ -3,6 +3,11 @@ import fredapi
 import matplotlib.pyplot as plt
 import pandas as pd
 import urllib3
+import ssl
+import datetime
+
+ssl._create_default_https_context = ssl._create_unverified_context
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def get_kbe_data():
     """Get KBE ETF data from Yahoo Finance"""
@@ -12,9 +17,12 @@ def get_kbe_data():
 
 def get_new_home_sales_data():
     """Get new home sales data from FRED"""
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    
     fred = fredapi.Fred(api_key="329c6ea515537c0bfa6823cc9f9a08b1")
-    data = fred.get_series("HSN1F")
+    # Calculate start date 5 years ago
+    start_date = (datetime.datetime.now() - datetime.timedelta(days=365*5)).strftime("%Y-%m-%d")
+
+    data = fred.get_series("HSN1F", observation_start=start_date)
     data = pd.DataFrame(data, columns=["New Home Sales"])
     data.index = pd.to_datetime(data.index)
     return data
