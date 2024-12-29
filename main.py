@@ -59,6 +59,58 @@ def get_new_home_sales_data():
     except Exception as e:
         raise Exception(f"Failed to fetch FRED data: {str(e)}")
 
+def get_housing_starts_data():
+    """Get housing starts data from FRED
+    
+    Returns:
+        pd.DataFrame: DataFrame containing housing starts data
+    
+    Raises:
+        ValueError: If FRED_API_KEY is not set in environment variables
+        Exception: For any FRED API related errors
+    """
+    fred_api_key = os.getenv("FRED_API_KEY")
+    if not fred_api_key:
+        raise ValueError("FRED_API_KEY environment variable is not set")
+
+    try:
+        fred = fredapi.Fred(api_key=fred_api_key)
+        # Calculate start date 5 years ago
+        start_date = (datetime.datetime.now() - datetime.timedelta(days=365*5)).strftime("%Y-%m-%d")
+
+        data = fred.get_series("HOUST", observation_start=start_date)
+        data = pd.DataFrame(data, columns=["Housing Starts"])
+        data.index = pd.to_datetime(data.index)
+        return data
+    except Exception as e:
+        raise Exception(f"Failed to fetch FRED data: {str(e)}")
+
+def get_10yr_treasury_data():
+    """Get 10-year Treasury yield data from FRED
+    
+    Returns:
+        pd.DataFrame: DataFrame containing 10-year Treasury yield data
+    
+    Raises:
+        ValueError: If FRED_API_KEY is not set in environment variables
+        Exception: For any FRED API related errors
+    """
+    fred_api_key = os.getenv("FRED_API_KEY")
+    if not fred_api_key:
+        raise ValueError("FRED_API_KEY environment variable is not set")
+
+    try:
+        fred = fredapi.Fred(api_key=fred_api_key)
+        # Calculate start date 5 years ago
+        start_date = (datetime.datetime.now() - datetime.timedelta(days=365*5)).strftime("%Y-%m-%d")
+
+        data = fred.get_series("GS10", observation_start=start_date)
+        data = pd.DataFrame(data, columns=["10-Year Treasury"])
+        data.index = pd.to_datetime(data.index)
+        return data
+    except Exception as e:
+        raise Exception(f"Failed to fetch FRED data: {str(e)}")
+
 def calculate_yoy(data: pd.DataFrame, column: str = "Close") -> pd.DataFrame:
     """Calculate year-over-year changes for financial data
     
@@ -78,16 +130,20 @@ def calculate_yoy(data: pd.DataFrame, column: str = "Close") -> pd.DataFrame:
     data["YoY"] = data[column].pct_change(252) * 100  # Approximately 252 trading days per year
     return data
 
-def plot_data(kbe_data: pd.DataFrame, new_home_sales_data: pd.DataFrame) -> None:
-    """Plot KBE ETF and new home sales YoY changes
+def plot_data(kbe_data: pd.DataFrame, new_home_sales_data: pd.DataFrame, housing_starts_data: pd.DataFrame, treasury_data: pd.DataFrame) -> None:
+    """Plot KBE ETF, new home sales, housing starts, and 10-year Treasury YoY changes
     
     Args:
         kbe_data (pd.DataFrame): DataFrame containing KBE YoY data
         new_home_sales_data (pd.DataFrame): DataFrame containing new home sales YoY data
+        housing_starts_data (pd.DataFrame): DataFrame containing housing starts YoY data
+        treasury_data (pd.DataFrame): DataFrame containing 10-year Treasury YoY data
     """
     # Print data ranges being plotted
     print("Plotting KBE Data Range:", kbe_data.index.min(), "to", kbe_data.index.max())
     print("Plotting New Home Sales Data Range:", new_home_sales_data.index.min(), "to", new_home_sales_data.index.max())
+    print("Plotting Housing Starts Data Range:", housing_starts_data.index.min(), "to", housing_starts_data.index.max())
+    print("Plotting 10-Year Treasury Data Range:", treasury_data.index.min(), "to", treasury_data.index.max())
 
     fig, ax1 = plt.subplots(figsize=(12, 6))
     ax1.plot(kbe_data.index, kbe_data["YoY"], color="blue", label="KBE YoY Change")
@@ -99,7 +155,11 @@ def plot_data(kbe_data: pd.DataFrame, new_home_sales_data: pd.DataFrame) -> None
     ax2 = ax1.twinx()
     ax2.plot(new_home_sales_data.index, new_home_sales_data["YoY"],
              color="red", label="New Home Sales YoY Change")
-    ax2.set_ylabel("New Home Sales YoY Change (%)", color="red")
+    ax2.plot(housing_starts_data.index, housing_starts_data["YoY"],
+             color="green", label="Housing Starts YoY Change")
+    ax2.plot(treasury_data.index, treasury_data["YoY"],
+             color="purple", label="10-Year Treasury YoY Change")
+    ax2.set_ylabel("Economic Indicators YoY Change (%)", color="red")
     ax2.tick_params(axis="y", labelcolor="red")
 
     # Combine legends from both axes
@@ -107,7 +167,7 @@ def plot_data(kbe_data: pd.DataFrame, new_home_sales_data: pd.DataFrame) -> None
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(lines + lines2, labels + labels2, loc="upper left")
 
-    plt.title("KBE ETF and New Home Sales YoY Changes")
+    plt.title("KBE ETF, New Home Sales, Housing Starts, and 10-Year Treasury YoY Changes")
     plt.tight_layout()
     plt.show()
 
@@ -162,7 +222,50 @@ def main():
     print("KBE Data End Date:", kbe_data.index.max())
     print("New Home Sales Data End Date:", new_home_sales_data.index.max())
     
-    plot_data(kbe_data, new_home_sales_data)
+    housing_starts_data = get_housing_starts_data()
+    
+    # Resample housing starts data to daily frequency
+    housing_starts_data = housing_starts_data.resample('D').ffill()
+    
+    # Calculate YoY for housing starts
+    housing_starts_data = calculate_yoy(housing_starts_data, column="Housing Starts")
+    print("Housing Starts columns after YoY calculation:", housing_starts_data.columns)
+    
+    # Ensure housing starts data uses timezone-aware timestamps
+    housing_starts_data.index = housing_starts_data.index.tz_localize(None)
+    
+    # Align housing starts data with other datasets
+    start_date = min(kbe_data.index.min(), new_home_sales_data.index.min(), housing_starts_data.index.min())
+    kbe_data = kbe_data[kbe_data.index >= start_date]
+    new_home_sales_data = new_home_sales_data[new_home_sales_data.index >= start_date]
+    housing_starts_data = housing_starts_data[housing_starts_data.index >= start_date]
+    
+    print("Final Housing Starts Data Start Date:", housing_starts_data.index.min())
+    print("Final Housing Starts Data End Date:", housing_starts_data.index.max())
+    
+    treasury_data = get_10yr_treasury_data()
+    
+    # Resample treasury data to daily frequency
+    treasury_data = treasury_data.resample('D').ffill()
+    
+    # Calculate YoY for treasury data
+    treasury_data = calculate_yoy(treasury_data, column="10-Year Treasury")
+    print("10-Year Treasury columns after YoY calculation:", treasury_data.columns)
+    
+    # Ensure treasury data uses timezone-aware timestamps
+    treasury_data.index = treasury_data.index.tz_localize(None)
+    
+    # Align treasury data with other datasets
+    start_date = min(kbe_data.index.min(), new_home_sales_data.index.min(), housing_starts_data.index.min(), treasury_data.index.min())
+    kbe_data = kbe_data[kbe_data.index >= start_date]
+    new_home_sales_data = new_home_sales_data[new_home_sales_data.index >= start_date]
+    housing_starts_data = housing_starts_data[housing_starts_data.index >= start_date]
+    treasury_data = treasury_data[treasury_data.index >= start_date]
+    
+    print("Final 10-Year Treasury Data Start Date:", treasury_data.index.min())
+    print("Final 10-Year Treasury Data End Date:", treasury_data.index.max())
+    
+    plot_data(kbe_data, new_home_sales_data, housing_starts_data, treasury_data)
 
 if __name__ == "__main__":
     main()
