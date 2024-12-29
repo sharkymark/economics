@@ -1,11 +1,15 @@
-# USA New Home Sales vs NASDAQ Bank ETF Analysis
+# Economic Indicators Analysis
 
-This Python application visualizes the relationship between USA new home sales and NASDAQ bank ETF performance.
+This Python application analyzes and visualizes the relationship between various economic indicators and the KBE Bank ETF performance.
 
 ## Features
-- Fetches new home sales data from U.S. Census Bureau API
-- Retrieves NASDAQ bank ETF (QABA) data using yfinance
-- Creates a comparative visualization of both datasets
+- Fetches KBE ETF data from Yahoo Finance using yfinance
+- Retrieves economic indicators from FRED API:
+  - New Home Sales (HSN1F)
+  - Housing Starts (HOUST)
+  - 10-Year Treasury Yield (GS10)
+- Calculates year-over-year (YoY) changes for all series
+- Creates a comparative visualization of all datasets
 
 ## Installation
 1. Clone this repository
@@ -13,11 +17,43 @@ This Python application visualizes the relationship between USA new home sales a
    ```bash
    pip install -r requirements.txt
    ```
-3. Run the application:
+3. Set up FRED API key:
+   - Create a `.env` file in the project root
+   - Add your FRED API key:
+     ```
+     FRED_API_KEY=your_api_key_here
+     ```
+4. Run the application:
    ```bash
    python main.py
    ```
 
 ## Data Sources
-- U.S. Census Bureau API
-- Yahoo Finance (via yfinance)
+- **Yahoo Finance** (via yfinance):
+  - KBE ETF data
+- **FRED (Federal Reserve Economic Data)**:
+  - New Home Sales (HSN1F)
+  - Housing Starts (HOUST)
+  - 10-Year Treasury Yield (GS10)
+
+## Analysis Methodology
+1. Fetches 5 years of historical data for all series
+2. Calculates year-over-year percentage changes using 252 trading days
+3. Aligns all datasets to the earliest available start date
+4. Forward fills missing data when necessary
+5. Plots all YoY changes on a single chart with dual axes
+
+## Requirements
+- Python 3.8+
+- Required packages (see requirements.txt):
+  - yfinance
+  - fredapi
+  - pandas
+  - matplotlib
+  - python-dotenv
+
+## Usage
+The application will:
+1. Fetch and process all data
+2. Print key statistics about each dataset
+3. Display an interactive plot showing YoY changes for all series
