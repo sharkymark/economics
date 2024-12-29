@@ -17,7 +17,7 @@ def get_kbe_data():
 
 def get_new_home_sales_data():
     """Get new home sales data from FRED"""
-    
+
     fred = fredapi.Fred(api_key="329c6ea515537c0bfa6823cc9f9a08b1")
     # Calculate start date 5 years ago
     start_date = (datetime.datetime.now() - datetime.timedelta(days=365*5)).strftime("%Y-%m-%d")
@@ -50,8 +50,12 @@ def plot_data(kbe_data, new_home_sales_data):
 
 def main():
     kbe_data = get_kbe_data()
+    print("KBE Data Start Date:", kbe_data.index.min())
+    print("KBE Data End Date:", kbe_data.index.max())
     kbe_data = calculate_yoy(kbe_data)
     new_home_sales_data = get_new_home_sales_data()
+    print("New Home Sales Data Start Date:", new_home_sales_data.index.min())
+    print("New Home Sales Data End Date:", new_home_sales_data.index.max())
     plot_data(kbe_data, new_home_sales_data)
 
 if __name__ == "__main__":
