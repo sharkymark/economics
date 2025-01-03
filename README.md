@@ -1,15 +1,21 @@
-# Economic Indicators Analysis
+# Economic Indicators vs. ETF Analysis
 
-This Python application analyzes and visualizes the relationship between various economic indicators and the KBE Bank ETF performance.
+This Python application analyzes and visualizes the relationship between various economic indicators and ETF performance.
 
 ## Features
-- Fetches KBE ETF data from Yahoo Finance using yfinance
-- Retrieves economic indicators from FRED API:
-  - New Home Sales (HSN1F)
-  - Housing Starts (HOUST)
-  - 10-Year Treasury Yield (GS10)
-- Calculates year-over-year (YoY) changes for all series
-- Creates a comparative visualization of all datasets
+- Correlates bank ETF performance with economic indicators
+  - Fetches KBE ETF data from Yahoo Finance using yfinance
+  - Retrieves economic indicators from FRED API:
+    - New Home Sales (HSN1F)
+    - Housing Starts (HOUST)
+    - 10-Year Treasury Yield (GS10)
+  - Calculates year-over-year (YoY) changes for all series
+  - Creates a comparative visualization of all datasets
+- Correlates 10 year benchmark treasury rate with Russell 2000 ETF performance
+  - Fetches IWM and IMO (growth) ETF data from Yahoo Finance using yfinance
+  - Retrieves 10-Year Treasury Yield (GS10) from FRED API
+  - Calculates year-over-year (YoY) changes for both series
+  - Creates a comparative visualization of both datasets
 
 ## Installation
 1. Clone this repository
@@ -30,18 +36,11 @@ This Python application analyzes and visualizes the relationship between various
 
 ## Data Sources
 - **Yahoo Finance** (via yfinance):
-  - KBE ETF data
+  - ETF data
 - **FRED (Federal Reserve Economic Data)**:
   - New Home Sales (HSN1F)
   - Housing Starts (HOUST)
   - 10-Year Treasury Yield (GS10)
-
-## Analysis Methodology
-1. Fetches 5 years of historical data for all series
-2. Calculates year-over-year percentage changes using 252 trading days
-3. Aligns all datasets to the earliest available start date
-4. Forward fills missing data when necessary
-5. Plots all YoY changes on a single chart with dual axes
 
 ## Requirements
 - Python 3.8+
