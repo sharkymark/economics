@@ -1,6 +1,6 @@
 requests>=2.31.0
-yfinance>=0.2.31
-matplotlib>=3.8.2
+yfinance>=0.2.55
+matplotlib>=3.10.1
 fredapi
 python-dotenv>=1.0.0
 certifi>=2024.2.2
