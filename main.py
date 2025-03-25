@@ -16,6 +16,11 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # Load environment variables from .env file
 load_dotenv()
 
+# Function to check if running in a Dev Container
+def is_devcontainer():
+    """Check if the script is running inside a Dev Container."""
+    return os.path.exists("/.dockerenv") or "DEV_CONTAINER" in os.environ
+
 def get_kbe_data(ticker: str="KBE", years: int=10) -> pd.DataFrame:
     """Get KBE ETF data from Yahoo Finance
     
@@ -132,6 +137,14 @@ def calculate_yoy(data: pd.DataFrame, column: str = "Close") -> pd.DataFrame:
     data["YoY"] = data[column].pct_change(252) * 100  # Approximately 252 trading days per year
     return data
 
+# Function to get the workspace folder
+def get_workspace_folder():
+    """Get the workspace folder from environment or default to cwd."""
+    # Check for Dev Container-specific environment variables
+    workspace_folder = os.environ.get("WORKSPACE_FOLDER", os.environ.get("PWD", os.getcwd()))
+    return workspace_folder
+
+
 def plot_data(kbe_data: pd.DataFrame, new_home_sales_data: pd.DataFrame, housing_starts_data: pd.DataFrame = None, treasury_data: pd.DataFrame = None, ticker: str="KBE") -> None:
     """Plot ETF, new home sales, housing starts, and 10-year Treasury YoY changes
     
@@ -171,7 +184,25 @@ def plot_data(kbe_data: pd.DataFrame, new_home_sales_data: pd.DataFrame, housing
 
     plt.title("KBE ETF, New Home Sales, Housing Starts, and 10-Year Treasury YoY Changes")
     plt.tight_layout()
-    plt.show()
+
+    # Save the plot to a file
+    workspace_folder = get_workspace_folder()
+    plot_path = "housing_bank_etf_plot.png" if not is_devcontainer() else os.path.join(get_workspace_folder(), "housing_bank_etf_plot.png")  # Adjust path based on your WORKDIR in Dockerfile
+    plt.savefig(plot_path)
+    print(f"Plot saved to {plot_path}")
+
+    # Attempt to show the plot
+    try:
+        plt.show()
+    except Exception as e:
+        print(f"Warning: Could not display plot ({str(e)}).")
+
+    # If in a Dev Container, inform the user
+    if is_devcontainer():
+        print("Note: Running in a Dev Container. The plot window won't display. Open the saved file at", plot_path, "in VS Code or copy it to your host machine.")
+
+    plt.close()  # Close the figure to free memory
+
 
 def get_etf_data(ticker: str, years: int=2) -> pd.DataFrame:
     """Get ETF data from Yahoo Finance
@@ -243,11 +274,26 @@ def plot_correlation(treasury_data: pd.DataFrame, etf_data: dict) -> None:
 
     plt.title("10-Year Treasury Yield vs Russell 2000 ETFs")
     plt.tight_layout()
-    plt.show(block=False)
-    
-    # Wait for user input before returning to menu
+
+    # Save the plot to a file
+    workspace_folder = get_workspace_folder()
+    plot_path = "10yr_russell_plot.png" if not is_devcontainer() else os.path.join(get_workspace_folder(), "10yr_russell_plot.png")
+    plt.savefig(plot_path)
+    print(f"Plot saved to {plot_path}")
+
+    # Attempt to show the plot
+    try:
+        plt.show(block=False)
+    except Exception as e:
+        print(f"Warning: Could not display plot ({str(e)}).")
+
+    # If in a Dev Container, inform the user
+    if is_devcontainer():
+        print("Note: Running in a Dev Container. The plot window won't display. Open the saved file at", plot_path, "in VS Code or copy it to your host machine.")
+
     input("\nPress Enter to return to menu...")
     plt.close()
+
 
 def display_menu() -> int:
     """Display menu and get user choice"""
